@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.delcom.data.AppException
 import org.delcom.data.DataResponse
+import org.delcom.data.TodoListData
 import org.delcom.data.TodoRequest
 import org.delcom.helpers.ServiceHelper
 import org.delcom.helpers.ValidatorHelper
@@ -52,15 +53,14 @@ class TodoService(
         val response = DataResponse(
             "success",
             "Berhasil mengambil daftar todo saya",
-            mapOf(
-                Pair("todos", todos),
-                Pair("totalTodos", totalTodos),
-                Pair("completedTodos", completedTodos),
-                Pair("incompleteTodos", incompleteTodos),
-                // Alias untuk kompatibilitas nama field di frontend
-                Pair("totalTodo", totalTodos),
-                Pair("todoSelesai", completedTodos),
-                Pair("todoBelumSelesai", incompleteTodos)
+            TodoListData(
+                todos = todos,
+                totalTodos = totalTodos,
+                completedTodos = completedTodos,
+                incompleteTodos = incompleteTodos,
+                totalTodo = totalTodos,
+                todoSelesai = completedTodos,
+                todoBelumSelesai = incompleteTodos
             )
         )
         call.respond(response)

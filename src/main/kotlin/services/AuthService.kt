@@ -52,7 +52,7 @@ class AuthService(
             "Berhasil melakukan pendaftaran",
             mapOf(Pair("userId", userId))
         )
-        call.respond(response)
+        call.respond<DataResponse<Map<String, String>>>(response)
     }
 
     // Login
@@ -104,7 +104,7 @@ class AuthService(
                 Pair("refreshToken", strRefreshToken)
             )
         )
-        call.respond(response)
+        call.respond<DataResponse<Map<String, String>>>(response)
     }
 
     // Refresh Token
@@ -162,7 +162,7 @@ class AuthService(
                 Pair("refreshToken", strRefreshToken)
             )
         )
-        call.respond(response)
+        call.respond<DataResponse<Map<String, String>>>(response)
     }
 
     // Logout
@@ -187,11 +187,11 @@ class AuthService(
         refreshTokenRepository.delete(request.authToken)
         refreshTokenRepository.deleteByUserId(userId)
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil logout",
             null,
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 }

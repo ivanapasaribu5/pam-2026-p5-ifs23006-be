@@ -44,7 +44,7 @@ class UserService(
                 ),
             )
         )
-        call.respond(response)
+        call.respond<DataResponse<Map<String, UserResponse>>>(response)
     }
 
     // Mengubah data saya
@@ -80,12 +80,12 @@ class UserService(
             throw AppException(400, "Gagal memperbarui data profile!")
         }
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil mengubah data profile",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // mengubah photo profile
@@ -150,12 +150,12 @@ class UserService(
             }
         }
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil mengubah photo profile",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // Mengubah kata sandi
@@ -189,12 +189,12 @@ class UserService(
         // Hapus semua token
         refreshTokenRepo.deleteByUserId(user.id)
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil mengubah kata sandi",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // Mengambil photo

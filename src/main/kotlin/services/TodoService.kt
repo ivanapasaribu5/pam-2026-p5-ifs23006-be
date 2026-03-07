@@ -13,10 +13,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.delcom.data.AppException
 import org.delcom.data.DataResponse
+import org.delcom.data.TodoCreateData
 import org.delcom.data.TodoListData
+import org.delcom.data.TodoListResponse
 import org.delcom.data.TodoRequest
 import org.delcom.helpers.ServiceHelper
 import org.delcom.helpers.ValidatorHelper
+import org.delcom.entities.Todo
 import org.delcom.repositories.ITodoRepository
 import org.delcom.repositories.IUserRepository
 import java.io.File
@@ -50,7 +53,7 @@ class TodoService(
         val completedTodos = todos.count { it.isDone }
         val incompleteTodos = totalTodos - completedTodos
 
-        val response = DataResponse(
+        val response = TodoListResponse(
             "success",
             "Berhasil mengambil daftar todo saya",
             TodoListData(
@@ -63,7 +66,7 @@ class TodoService(
                 todoBelumSelesai = incompleteTodos
             )
         )
-        call.respond(response)
+        call.respond<TodoListResponse>(response)
     }
 
     // Mengambil daftar todo saya dengan id
@@ -83,7 +86,7 @@ class TodoService(
             "Berhasil mengambil data todo",
             mapOf(Pair("todo", todo))
         )
-        call.respond(response)
+        call.respond<DataResponse<Map<String, Todo>>>(response)
     }
 
     // Ubah cover todo
@@ -162,12 +165,12 @@ class TodoService(
             }
         }
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil mengubah cover todo",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // Menambahkan data todo
@@ -190,12 +193,18 @@ class TodoService(
             request.toEntity()
         )
 
+        val createdTodo = todoRepo.getById(todoId)
+            ?: throw AppException(500, "Todo berhasil dibuat tetapi gagal dimuat kembali")
+
         val response = DataResponse(
             "success",
             "Berhasil menambahkan data todo",
-            mapOf(Pair("todoId", todoId))
+            TodoCreateData(
+                todoId = todoId,
+                todo = createdTodo
+            )
         )
-        call.respond(response)
+        call.respond<DataResponse<TodoCreateData>>(response)
     }
 
     // Mengubah data todo
@@ -233,12 +242,12 @@ class TodoService(
             throw AppException(400, "Gagal memperbarui data todo!")
         }
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil mengubah data todo",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // Menghapus data todo
@@ -267,12 +276,12 @@ class TodoService(
             }
         }
 
-        val response = DataResponse(
+        val response = DataResponse<String?>(
             "success",
             "Berhasil menghapus data todo",
             null
         )
-        call.respond(response)
+        call.respond<DataResponse<String?>>(response)
     }
 
     // Mengambil gambar todo

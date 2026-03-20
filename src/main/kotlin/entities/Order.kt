@@ -7,13 +7,17 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-data class User(
+data class Order(
     var id: String = UUID.randomUUID().toString(),
-    var name: String,
-    var username: String,
-    var password: String,
-    var photo: String? = null,
-    var about: String? = null,
+    var userId: String,
+    var customerName: String,
+    var contactNumber: String,
+    var serviceType: String,   // "Wash & Fold", "Dry Cleaning", "Iron Only", "Wash & Iron"
+    var weightKg: Double,
+    var status: String = "New",  // New, Washing, In Progress, Ready for Pickup, Completed
+    var totalCost: Long,
+    var pickupDate: String,
+    var notes: String = "",
 
     @Contextual
     val createdAt: Instant = Clock.System.now(),

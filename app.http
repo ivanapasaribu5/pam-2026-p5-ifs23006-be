@@ -1,6 +1,10 @@
 ## Global Variabel
-#@BaseUrl = https://pam-2026-p5-ifs18005-be.delcom.org:8080
-@BaseUrl = https://pam-2026-p5-ifs23006-be.ivanaimutlucu.fun:8080
+#@BaseUrl = https://pam-2026-p5-ifs23006-be.delcom.org:8080/
+@BaseUrl = https://pam-2026-proyek-ifs23006-be-main.ivanaimutlucu.fun/
+@Username = ivana23
+@Password = newpassword123
+@OldPassword = password123
+@NewPassword = newpassword123
 
 ### ---------------------------------------
 ## Auth
@@ -8,52 +12,96 @@
 
 ### Melakukan pendaftaran
 # @name PostRegister
-POST {{BaseUrl}}/auth/register
+POST {{BaseUrl}}auth/register
 Content-Type: application/json
 
 {
-  "name": "Tester",
-  "username": "tester",
-  "password": "tester"
+  "name": "Ivana",
+  "username": "{{Username}}",
+  "password": "{{Password}}"
 }
 
 ### Masuk ke layanan
 # @name PostLogin
-POST {{BaseUrl}}/auth/login
+POST {{BaseUrl}}auth/login
 Content-Type: application/json
 
 {
-  "username": "tester",
-  "password": "tester"
+  "username": "{{Username}}",
+  "password": "{{Password}}"
 }
 
 > {%
-    client.global.set("authToken", response.body.data.authToken);
-    client.global.set("refreshToken", response.body.data.refreshToken);
+    client.test("Login returns tokens", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body != null, "Empty response body");
+        client.assert(response.body.data != null, "Missing body.data");
+        client.assert(response.body.data.authToken, "Missing authToken");
+        client.assert(response.body.data.refreshToken, "Missing refreshToken");
+    });
+
+    if (response.body && response.body.data) {
+        client.global.set("authToken", response.body.data.authToken);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+
+        // Ambil userId dari token JWT
+        try {
+            var tokenParts = String(response.body.data.authToken).split(".");
+            if (tokenParts.length >= 2) {
+                var payloadB64 = tokenParts[1].replace(/-/g, "+").replace(/_/g, "/");
+                while (payloadB64.length % 4 !== 0) payloadB64 += "=";
+                var payloadJson = atob(payloadB64);
+                var payload = JSON.parse(payloadJson);
+                if (payload.userId) client.global.set("userId", payload.userId);
+            }
+        } catch (e) {
+            console.log("Failed to decode JWT userId:", e);
+        }
+    }
 %}
 
-### Keluar dari layanan (skip run)
+### Refresh Token
+# @name PostRefreshToken
+POST {{BaseUrl}}auth/refresh-token
+Content-Type: application/json
+
+{
+  "authToken": "{{authToken}}",
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.test("Refresh token returns tokens", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.data != null, "Missing body.data");
+    });
+
+    if (response.body && response.body.data) {
+        client.global.set("authToken", response.body.data.authToken);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+
+        // Update userId dari token baru
+        try {
+            var tokenParts = String(response.body.data.authToken).split(".");
+            if (tokenParts.length >= 2) {
+                var payloadB64 = tokenParts[1].replace(/-/g, "+").replace(/_/g, "/");
+                while (payloadB64.length % 4 !== 0) payloadB64 += "=";
+                var payloadJson = atob(payloadB64);
+                var payload = JSON.parse(payloadJson);
+                if (payload.userId) client.global.set("userId", payload.userId);
+            }
+        } catch (e) {}
+    }
+%}
+
+### Keluar dari layanan
 # @name PostLogout
-POST {{BaseUrl}}/auth/logout
+POST {{BaseUrl}}auth/logout
 Content-Type: application/json
 
 {
   "authToken": "{{authToken}}"
 }
-
-### Masuk ke layanan
-POST {{BaseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "username": "tester",
-  "password": "tester"
-}
-
-> {%
-    client.global.set("authToken", response.body.data.authToken);
-    client.global.set("refreshToken", response.body.data.refreshToken);
-%}
 
 ### ---------------------------------------
 ## Users
@@ -61,123 +109,116 @@ Content-Type: application/json
 
 ### Mengambil informasi akun
 # @name GetUserMe
-GET {{BaseUrl}}/users/me
+GET {{BaseUrl}}profile
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 > {%
-    client.global.set("userId", response.body.data.user.id);
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("userId", response.body.data.id);
+    }
 %}
 
 ### Mengubah informasi akun
 # @name PutUserMe
-PUT {{BaseUrl}}/users/me
+PUT {{BaseUrl}}profile
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "name": "Tester Update",
-  "username": "tester"
+  "name": "Ivana Update",
+  "username": "ivana23"
 }
 
 ### Mengubah kata sandi akun
 # @name PutUserMePassword
-PUT {{BaseUrl}}/users/me/password
+PUT {{BaseUrl}}profile/password
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "newPassword": "tester",
-  "password": "tester"
+  "newPassword": "{{NewPassword}}",
+  "oldPassword": "{{OldPassword}}"
 }
 
-### Mengubah photo profile
+### Mengubah foto profil
 # @name PutUserMePhoto
-PUT {{BaseUrl}}/users/me/photo
+PUT {{BaseUrl}}profile/photo
 Authorization: Bearer {{authToken}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="example.png"
+Content-Disposition: form-data; name="file"; filename="profile.png"
 Content-Type: image/png
 
-< ./uploads/examples/me.png
+< ./uploads/profile.png
 --WebAppBoundary--
 
-### Mengambil photo profile berdasarkan id user
-### Jalankan GetUserMe dulu agar variable global {{userId}} terisi
-
+### Mengambil foto profil berdasarkan userId
 # @name GetMyPhoto
-GET {{BaseUrl}}/images/users/{{userId}}
+GET {{BaseUrl}}images/users/{{userId}}
+Authorization: Bearer {{authToken}}
+
+### ---------------------------------------
+## Orders (Laundry)
+### ---------------------------------------
+
+### Mengambil semua data pesanan laundry
+# @name GetOrders
+GET {{BaseUrl}}orders?search=
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
-### ---------------------------------------
-## Todos
-### ---------------------------------------
-
-### Mengambil semua data todo user saat ini
-# @name GetTodos
-GET {{BaseUrl}}/todos?search=
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-### Menambahkan todo
-# @name PostTodos
-POST {{BaseUrl}}/todos
+### Menambahkan pesanan laundry baru
+# @name PostOrders
+POST {{BaseUrl}}orders
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "title": "Judul Todo",
-  "description": "Deskripsi Todo",
-  "urgency": "MEDIUM"
+  "customerId": "c123",
+  "customerName": "Sarah Jane",
+  "contactNumber": "08123456789",
+  "serviceType": "Wash & Fold",
+  "weightKg": 3.5,
+  "status": "New",
+  "totalCost": 52500,
+  "pickupDate": "2025-03-20",
+  "notes": "Jangan dicampur pemutih"
 }
 
 > {%
-    client.global.set("todoId", response.body.data.todoId);
+    if (response.body && response.body.data && response.body.data.orderId) {
+        client.global.set("orderId", response.body.data.orderId);
+    }
 %}
 
-### Mengambil todo dengan id
-# @name GetTodoById
-GET {{BaseUrl}}/todos/{{todoId}}
+### Mengambil pesanan berdasarkan id
+# @name GetOrderById
+GET {{BaseUrl}}orders/{{orderId}}
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
-### Mengubah todo
-# @name PutTodo
-PUT {{BaseUrl}}/todos/{{todoId}}
+### Mengubah data pesanan
+# @name PutOrder
+PUT {{BaseUrl}}orders/{{orderId}}
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "title": "Judul Todo",
-  "description": "Deskripsi Todo",
-  "urgency": "HIGH",
-  "isDone": true
+  "customerId": "c123",
+  "customerName": "Sarah Jane",
+  "contactNumber": "08123456789",
+  "serviceType": "Wash & Fold",
+  "weightKg": 3.5,
+  "status": "Washing",
+  "totalCost": 52500,
+  "pickupDate": "2025-03-20",
+  "notes": "Sedang dicuci"
 }
 
-### Mengubah cover todo
-# @name PutTodoCover
-PUT {{BaseUrl}}/todos/{{todoId}}/cover
-Authorization: Bearer {{authToken}}
-Content-Type: multipart/form-data; boundary=WebAppBoundary
-
---WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="example.png"
-Content-Type: image/png
-
-< ./uploads/examples/me.png
---WebAppBoundary--
-
-### Mengambil cover todo
-# @name GetTodoCover
-GET {{BaseUrl}}/images/todos/{{todoId}}
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-### Menghapus todo
-# @name DeleteTodo
-DELETE {{BaseUrl}}/todos/{{todoId}}
+### Menghapus pesanan
+# @name DeleteOrder
+DELETE {{BaseUrl}}orders/{{orderId}}
 Authorization: Bearer {{authToken}}
 Content-Type: application/json

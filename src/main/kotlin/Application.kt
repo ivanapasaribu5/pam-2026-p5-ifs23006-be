@@ -1,4 +1,4 @@
-package org.delcom
+package org.delcom.laundry
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -12,13 +12,10 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
-import org.delcom.helpers.JWTConstants
-import org.delcom.helpers.configureDatabases
-import org.delcom.module.appModule
+import org.delcom.laundry.helpers.JWTConstants
+import org.delcom.laundry.helpers.configureDatabases
+import org.delcom.laundry.module.appModule
 import org.koin.ktor.plugin.Koin
 
 fun main(args: Array<String>) {
@@ -29,7 +26,6 @@ fun main(args: Array<String>) {
     }
 
     dotenv.entries().forEach {
-        // Only propagate non-empty values from .env so empty env/system values don't break runtime config.
         if (it.value.isNotBlank()) {
             System.setProperty(it.key, it.value)
         }
@@ -38,7 +34,7 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-fun Application.module() {
+fun Application.laundryModule() {
 
     val jwtSecret = environment.config
         .propertyOrNull("ktor.jwt.secret")
@@ -46,9 +42,7 @@ fun Application.module() {
         ?.trim()
         .orEmpty()
         .ifBlank {
-            throw IllegalStateException(
-                "JWT secret is empty. Set JWT_SECRET in .env or environment variables."
-            )
+            throw IllegalStateException("JWT secret kosong. Set JWT_SECRET di .env atau environment variables.")
         }
 
     install(Authentication) {
@@ -64,22 +58,14 @@ fun Application.module() {
             )
 
             validate { credential ->
-                val userId = credential.payload
-                    .getClaim("userId")
-                    .asString()
-
-                if (!userId.isNullOrBlank())
-                    JWTPrincipal(credential.payload)
-                else null
+                val userId = credential.payload.getClaim("userId").asString()
+                if (!userId.isNullOrBlank()) JWTPrincipal(credential.payload) else null
             }
 
             challenge { _, _ ->
                 call.respond(
                     HttpStatusCode.Unauthorized,
-                    mapOf(
-                        "status" to "error",
-                        "message" to "Token tidak valid"
-                    )
+                    mapOf("status" to "error", "message" to "Token tidak valid atau sudah expired")
                 )
             }
         }
@@ -87,17 +73,20 @@ fun Application.module() {
 
     install(CORS) {
         anyHost()
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Patch)
     }
 
     install(ContentNegotiation) {
         json(
             Json {
-                explicitNulls = false
-                prettyPrint = true
+                explicitNulls    = false
+                prettyPrint      = true
                 ignoreUnknownKeys = true
-                serializersModule = SerializersModule {
-                    contextual(Instant::class, Instant.serializer())
-                }
             }
         )
     }

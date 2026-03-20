@@ -1,39 +1,28 @@
-package org.delcom.module
+package org.delcom.laundry.module
 
-import org.delcom.repositories.*
-import org.delcom.services.AuthService
-import org.delcom.services.TodoService
-import org.delcom.services.UserService
+import org.delcom.laundry.repositories.*
+import org.delcom.laundry.services.AuthService
+import org.delcom.laundry.services.OrderService
+import org.delcom.laundry.services.UserService
 import org.koin.dsl.module
 
 fun appModule(jwtSecret: String) = module {
+
     // User Repository
-    single<IUserRepository> {
-        UserRepository()
-    }
+    single<IUserRepository> { UserRepository() }
 
     // User Service
-    single {
-        UserService(get(),get())
-    }
+    single { UserService(get()) }
 
-    // Refresh Token Repository
-    single<IRefreshTokenRepository> {
-        RefreshTokenRepository()
-    }
+    // RefreshToken Repository
+    single<IRefreshTokenRepository> { RefreshTokenRepository() }
 
     // Auth Service
-    single {
-        AuthService(jwtSecret,get(), get())
-    }
+    single { AuthService(jwtSecret, get(), get()) }
 
-    // Plant Repository
-    single<ITodoRepository> {
-        TodoRepository()
-    }
+    // Order Repository
+    single<IOrderRepository> { OrderRepository() }
 
-    // Plant Service
-    single {
-        TodoService(get(),get())
-    }
+    // Order Service
+    single { OrderService(get(), get()) }
 }

@@ -1,11 +1,11 @@
-package org.delcom.repositories
+package org.delcom.laundry.repositories
 
-import org.delcom.entities.User
+import org.delcom.laundry.entities.User
 
-interface  IUserRepository {
+interface IUserRepository {
     suspend fun getById(userId: String): User?
     suspend fun getByUsername(username: String): User?
-    suspend fun create(user: User) : String
-    suspend fun update(id: String, newUser: User): Boolean
-    suspend fun delete(id: String): Boolean
+    suspend fun create(user: User): String
+    suspend fun update(userId: String, newUser: User): Boolean
+    suspend fun updatePhoto(userId: String, photo: String): Boolean
 }

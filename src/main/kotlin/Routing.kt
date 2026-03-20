@@ -1,48 +1,45 @@
-package org.delcom
+package org.delcom.laundry
 
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.auth.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.delcom.data.AppException
-import org.delcom.data.ErrorResponse
-import org.delcom.helpers.JWTConstants
-import org.delcom.helpers.parseMessageToMap
-import org.delcom.services.TodoService
-import org.delcom.services.AuthService
-import org.delcom.services.UserService
+import org.delcom.laundry.data.AppException
+import org.delcom.laundry.data.ErrorResponse
+import org.delcom.laundry.helpers.JWTConstants
+import org.delcom.laundry.helpers.parseMessageToMap
+import org.delcom.laundry.services.AuthService
+import org.delcom.laundry.services.OrderService
+import org.delcom.laundry.services.UserService
 import org.koin.ktor.ext.inject
 
 fun Application.configureRouting() {
-    val todoService: TodoService by inject()
-    val authService: AuthService by inject()
-    val userService: UserService by inject()
+    val authService: AuthService   by inject()
+    val userService: UserService   by inject()
+    val orderService: OrderService by inject()
 
     install(StatusPages) {
-        // Tangkap AppException
         exception<AppException> { call, cause ->
-            val dataMap: Map<String, List<String>> = parseMessageToMap(cause.message)
-
+            val dataMap = parseMessageToMap(cause.message)
             call.respond(
-                status = HttpStatusCode.fromValue(cause.code),
+                status  = HttpStatusCode.fromValue(cause.code),
                 message = ErrorResponse(
-                    status = "fail",
+                    status  = "fail",
                     message = if (dataMap.isEmpty()) cause.message else "Data yang dikirimkan tidak valid!",
-                    data = if (dataMap.isEmpty()) null else dataMap.toString()
+                    data    = if (dataMap.isEmpty()) null else dataMap.toString(),
                 )
             )
         }
 
-        // Tangkap semua Throwable lainnya
         exception<Throwable> { call, cause ->
             call.respond(
-                status = HttpStatusCode.fromValue(500),
+                status  = HttpStatusCode.InternalServerError,
                 message = ErrorResponse(
-                    status = "error",
+                    status  = "error",
                     message = cause.message ?: "Unknown error",
-                    data = ""
+                    data    = "",
                 )
             )
         }
@@ -50,75 +47,39 @@ fun Application.configureRouting() {
 
     routing {
         get("/") {
-            call.respondText("API telah berjalan. Dibuat oleh Abdullah Ubaid.")
+            call.respondText("Laundry App API is running. 🧺")
         }
 
-        // Route Auth
+        // Auth routes
         route("/auth") {
-            post("/login") {
-                authService.postLogin(call)
-            }
-            post("/register") {
-                authService.postRegister(call)
-            }
-            post("/refresh-token") {
-                authService.postRefreshToken(call)
-            }
-
-            post("/logout") {
-                authService.postLogout(call)
-            }
+            post("/register")      { authService.postRegister(call) }
+            post("/login")         { authService.postLogin(call) }
+            post("/refresh-token") { authService.postRefreshToken(call) }
+            post("/logout")        { authService.postLogout(call) }
         }
 
         authenticate(JWTConstants.NAME) {
-            // Route User
-            route("/users") {
-                get("/me") {
-                    userService.getMe(call)
-                }
-                put("/me") {
-                    userService.putMe(call)
-                }
-                put("/me/password") {
-                    userService.putMyPassword(call)
-                }
-                put("/me/photo") {
-                    userService.putMyPhoto(call)
-                }
+            // Profile routes
+            route("/profile") {
+                get          { userService.getMe(call) }
+                put          { userService.putMe(call) }
+                put("/password") { userService.putMyPassword(call) }
+                put("/photo")    { userService.putMyPhoto(call) }
             }
 
-            // Route Todos
-            route("/todos") {
-                get {
-                    todoService.getAll(call)
-                }
-                post {
-                    todoService.post(call)
-                }
-                get("/{id}") {
-                    todoService.getById(call)
-                }
-                put("/{id}") {
-                    todoService.put(call)
-                }
-                put("/{id}/cover") {
-                    todoService.putCover(call)
-                }
-                delete("/{id}") {
-                    todoService.delete(call)
-                }
+            // Order routes
+            route("/orders") {
+                get           { orderService.getAll(call) }
+                post          { orderService.post(call) }
+                get("/{id}")  { orderService.getById(call) }
+                put("/{id}")  { orderService.put(call) }
+                delete("/{id}") { orderService.delete(call) }
             }
         }
 
+        // Static image routes (no auth)
         route("/images") {
-            get("users/{id}") {
-                userService.getPhoto(call)
-            }
-
-            get("todos/{id}") {
-                todoService.getCover(call)
-            }
+            get("/users/{id}") { userService.getPhoto(call) }
         }
-
     }
 }

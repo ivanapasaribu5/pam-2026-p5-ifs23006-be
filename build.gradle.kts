@@ -12,6 +12,18 @@ plugins {
 group = "org.delcom"
 version = "0.0.1"
 
+// Ensure consistent builds across machines/CI.
+// IntelliJ still needs a JDK configured to run/debug the app.
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 application {
     mainClass = "org.delcom.ApplicationKt"
 }

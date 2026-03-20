@@ -1,27 +1,22 @@
-package org.delcom.data
+package org.delcom.laundry.data
 
 import kotlinx.serialization.Serializable
-import org.delcom.entities.RefreshToken
+import org.delcom.laundry.entities.RefreshToken
 
 @Serializable
 data class RefreshTokenRequest(
     var userId: String = "",
     var refreshToken: String = "",
     var authToken: String = "",
-){
-    fun toMap(): Map<String, Any?> {
-        return mapOf(
-            "refreshToken" to refreshToken,
-            "authToken" to authToken,
-        )
-    }
+) {
+    fun toMap(): Map<String, Any?> = mapOf(
+        "refreshToken" to refreshToken,
+        "authToken"    to authToken,
+    )
 
-    fun toEntity(): RefreshToken {
-        return RefreshToken(
-            userId = userId,
-            refreshToken = refreshToken,
-            authToken = authToken,
-        )
-    }
-
+    fun toEntity(): RefreshToken = RefreshToken(
+        userId       = userId,
+        refreshToken = refreshToken,
+        authToken    = authToken,
+    )
 }

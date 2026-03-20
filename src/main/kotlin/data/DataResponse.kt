@@ -1,5 +1,4 @@
-
-package org.delcom.data
+package org.delcom.laundry.data
 
 import kotlinx.serialization.Serializable
 
@@ -7,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class DataResponse<T>(
     val status: String,
     val message: String,
-    val data: T? = null
+    val data: T? = null,
 )

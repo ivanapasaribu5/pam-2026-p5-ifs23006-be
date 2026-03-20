@@ -1,4 +1,4 @@
-package org.delcom.entities
+package org.delcom.laundry.entities
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -8,8 +8,8 @@ import java.util.UUID
 
 @Serializable
 data class RefreshToken(
-    var id : String = UUID.randomUUID().toString(),
-    var userId : String,
+    var id: String = UUID.randomUUID().toString(),
+    var userId: String,
     var refreshToken: String,
     var authToken: String,
 

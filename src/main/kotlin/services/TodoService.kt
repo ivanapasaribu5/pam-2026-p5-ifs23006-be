@@ -13,13 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.delcom.data.AppException
 import org.delcom.data.DataResponse
-import org.delcom.data.TodoCreateData
-import org.delcom.data.TodoListData
-import org.delcom.data.TodoListResponse
 import org.delcom.data.TodoRequest
 import org.delcom.helpers.ServiceHelper
 import org.delcom.helpers.ValidatorHelper
-import org.delcom.entities.Todo
 import org.delcom.repositories.ITodoRepository
 import org.delcom.repositories.IUserRepository
 import java.io.File
@@ -29,19 +25,6 @@ class TodoService(
     private val userRepo: IUserRepository,
     private val todoRepo: ITodoRepository
 ) {
-    private val allowedUrgencies = setOf("LOW", "MEDIUM", "HIGH")
-
-    private fun normalizedUrgency(request: TodoRequest): String? =
-        (request.urgency ?: request.category)?.uppercase()
-
-    private fun validateUrgency(request: TodoRequest) {
-        val urgency = normalizedUrgency(request)
-        if (urgency != null && urgency !in allowedUrgencies) {
-            throw AppException(400, "Kategori/prioritas todo harus LOW, MEDIUM, atau HIGH")
-        }
-        request.urgency = urgency
-    }
-
     // Mengambil semua daftar todo saya
     suspend fun getAll(call: ApplicationCall) {
         val user = ServiceHelper.getAuthUser(call, userRepo)
@@ -49,24 +32,13 @@ class TodoService(
         val search = call.request.queryParameters["search"] ?: ""
 
         val todos = todoRepo.getAll(user.id, search)
-        val totalTodos = todos.size
-        val completedTodos = todos.count { it.isDone }
-        val incompleteTodos = totalTodos - completedTodos
 
-        val response = TodoListResponse(
+        val response = DataResponse(
             "success",
             "Berhasil mengambil daftar todo saya",
-            TodoListData(
-                todos = todos,
-                totalTodos = totalTodos,
-                completedTodos = completedTodos,
-                incompleteTodos = incompleteTodos,
-                totalTodo = totalTodos,
-                todoSelesai = completedTodos,
-                todoBelumSelesai = incompleteTodos
-            )
+            mapOf(Pair("todos", todos))
         )
-        call.respond<TodoListResponse>(response)
+        call.respond(response)
     }
 
     // Mengambil daftar todo saya dengan id
@@ -86,7 +58,7 @@ class TodoService(
             "Berhasil mengambil data todo",
             mapOf(Pair("todo", todo))
         )
-        call.respond<DataResponse<Map<String, Todo>>>(response)
+        call.respond(response)
     }
 
     // Ubah cover todo
@@ -113,13 +85,11 @@ class TodoService(
                     val fileName = UUID.randomUUID().toString() + ext
                     val filePath = "uploads/todos/$fileName"
 
-                    withContext(Dispatchers.IO) {
-                        val file = File(filePath)
-                        file.parentFile.mkdirs() // pastikan folder ada
+                    val file = File(filePath)
+                    file.parentFile.mkdirs() // pastikan folder ada
 
-                        part.provider().copyAndClose(file.writeChannel())
-                        request.cover = filePath
-                    }
+                    part.provider().copyAndClose(file.writeChannel())
+                    request.cover = filePath
                 }
 
                 else -> {}
@@ -145,7 +115,6 @@ class TodoService(
 
         request.title = oldTodo.title
         request.description = oldTodo.description
-        request.urgency = oldTodo.urgency
         request.isDone = oldTodo.isDone
 
         val isUpdated = todoRepo.update(
@@ -165,12 +134,12 @@ class TodoService(
             }
         }
 
-        val response = DataResponse<String?>(
+        val response = DataResponse(
             "success",
             "Berhasil mengubah cover todo",
             null
         )
-        call.respond<DataResponse<String?>>(response)
+        call.respond(response)
     }
 
     // Menambahkan data todo
@@ -186,25 +155,18 @@ class TodoService(
         validator.required("title", "Judul todo tidak boleh kosong")
         validator.required("description", "Deskripsi tidak boleh kosong")
         validator.validate()
-        validateUrgency(request)
 
         // Tambahkan todo
         val todoId = todoRepo.create(
             request.toEntity()
         )
 
-        val createdTodo = todoRepo.getById(todoId)
-            ?: throw AppException(500, "Todo berhasil dibuat tetapi gagal dimuat kembali")
-
         val response = DataResponse(
             "success",
             "Berhasil menambahkan data todo",
-            TodoCreateData(
-                todoId = todoId,
-                todo = createdTodo
-            )
+            mapOf(Pair("todoId", todoId))
         )
-        call.respond<DataResponse<TodoCreateData>>(response)
+        call.respond(response)
     }
 
     // Mengubah data todo
@@ -224,13 +186,11 @@ class TodoService(
         validator.required("description", "Deskripsi tidak boleh kosong")
         validator.required("isDone", "Status selesai tidak boleh kosong")
         validator.validate()
-        validateUrgency(request)
 
         val oldTodo = todoRepo.getById(todoId)
         if (oldTodo == null || oldTodo.userId != user.id) {
             throw AppException(404, "Data todo tidak tersedia!")
         }
-        request.urgency = request.urgency ?: request.category ?: oldTodo.urgency
         request.cover = oldTodo.cover
 
         val isUpdated = todoRepo.update(
@@ -242,12 +202,12 @@ class TodoService(
             throw AppException(400, "Gagal memperbarui data todo!")
         }
 
-        val response = DataResponse<String?>(
+        val response = DataResponse(
             "success",
             "Berhasil mengubah data todo",
             null
         )
-        call.respond<DataResponse<String?>>(response)
+        call.respond(response)
     }
 
     // Menghapus data todo
@@ -276,12 +236,12 @@ class TodoService(
             }
         }
 
-        val response = DataResponse<String?>(
+        val response = DataResponse(
             "success",
             "Berhasil menghapus data todo",
             null
         )
-        call.respond<DataResponse<String?>>(response)
+        call.respond(response)
     }
 
     // Mengambil gambar todo

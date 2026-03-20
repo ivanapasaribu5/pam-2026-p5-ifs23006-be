@@ -13,7 +13,6 @@ class TodoDAO(id: EntityID<UUID>) : Entity<UUID>(id) {
     var userId by TodoTable.userId
     var title by TodoTable.title
     var description by TodoTable.description
-    var urgency by TodoTable.urgency
     var cover by TodoTable.cover
     var isDone by TodoTable.isDone
     var createdAt by TodoTable.createdAt

@@ -1,10 +1,10 @@
-package org.delcom.data
+package org.delcom.laundry.data
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TodoListResponse(
+data class DataResponse<T>(
     val status: String,
     val message: String,
-    val data: TodoListData
+    val data: T? = null,
 )

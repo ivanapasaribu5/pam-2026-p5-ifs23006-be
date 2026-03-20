@@ -10,8 +10,6 @@ data class TodoRequest(
     var userId: String = "",
     var title: String = "",
     var description: String = "",
-    var urgency: String? = null,
-    var category: String? = null,
     var cover: String? = null,
     var isDone: Boolean = false,
 ){
@@ -20,8 +18,6 @@ data class TodoRequest(
             "userId" to userId,
             "title" to title,
             "description" to description,
-            "urgency" to urgency,
-            "category" to category,
             "cover" to cover,
             "isDone" to isDone,
         )
@@ -32,10 +28,10 @@ data class TodoRequest(
             userId = userId,
             title = title,
             description = description,
-            urgency = (urgency ?: category)?.uppercase() ?: "LOW",
             cover = cover,
             isDone = isDone,
             updatedAt = Clock.System.now()
         )
     }
+
 }

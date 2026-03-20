@@ -1,0 +1,14 @@
+ktor:
+  application:
+    modules:
+      - org.delcom.laundry.ApplicationKt.module
+  deployment:
+    port: ${APP_PORT:8080}
+    host: ${APP_HOST:0.0.0.0}
+
+  database:
+    host:     ${DB_HOST:127.0.0.1}
+    port:     ${DB_PORT:5432}
+    name:     ${DB_NAME:db_laundry}
+    user:     ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}

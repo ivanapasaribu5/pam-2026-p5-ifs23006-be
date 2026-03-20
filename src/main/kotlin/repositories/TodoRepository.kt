@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.lowerCase
 import java.util.*
 
-class TodoRepository : ITodoRepository {
+class TodoRepository(private val baseUrl: String) : ITodoRepository {
     override suspend fun getAll(userId: String, search: String): List<Todo> = suspendTransaction {
         if (search.isBlank()) {
             TodoDAO
@@ -20,17 +20,16 @@ class TodoRepository : ITodoRepository {
                     (TodoTable.userId eq UUID.fromString(userId))
                 }
                 .orderBy(TodoTable.createdAt to SortOrder.DESC)
-                .map(::todoDAOToModel)
+                .map{ todoDAOToModel(it, baseUrl) }
         } else {
             val keyword = "%${search.lowercase()}%"
 
             TodoDAO
                 .find {
-                    (TodoTable.userId eq UUID.fromString(userId)) and
-                            (TodoTable.title.lowerCase() like keyword)
+                    TodoTable.title.lowerCase() like keyword
                 }
-                .orderBy(TodoTable.createdAt to SortOrder.DESC)
-                .map(::todoDAOToModel)
+                .orderBy(TodoTable.title to SortOrder.ASC)
+                .map{ todoDAOToModel(it, baseUrl) }
         }
     }
 
@@ -40,7 +39,7 @@ class TodoRepository : ITodoRepository {
                 (TodoTable.id eq UUID.fromString(todoId))
             }
             .limit(1)
-            .map(::todoDAOToModel)
+            .map{ todoDAOToModel(it, baseUrl) }
             .firstOrNull()
     }
 
@@ -49,7 +48,6 @@ class TodoRepository : ITodoRepository {
             userId = UUID.fromString(todo.userId)
             title = todo.title
             description = todo.description
-            urgency = todo.urgency
             cover = todo.cover
             isDone = todo.isDone
             createdAt = todo.createdAt
@@ -71,7 +69,6 @@ class TodoRepository : ITodoRepository {
         if (todoDAO != null) {
             todoDAO.title = newTodo.title
             todoDAO.description = newTodo.description
-            todoDAO.urgency = newTodo.urgency
             todoDAO.cover = newTodo.cover
             todoDAO.isDone = newTodo.isDone
             todoDAO.updatedAt = newTodo.updatedAt
@@ -88,4 +85,5 @@ class TodoRepository : ITodoRepository {
         }
         rowsDeleted >= 1
     }
+
 }
